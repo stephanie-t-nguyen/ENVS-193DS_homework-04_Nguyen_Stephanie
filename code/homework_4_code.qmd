@@ -1,0 +1,43 @@
+---
+title: "Homework 4"
+author: "Stephanie Nguyen"
+date: 2023-05-24
+format:
+  docx:
+    toc: true
+    colorlinks: true
+---
+
+### Setup
+
+```{r, message = FALSE, warnings = FALSE}
+library(tidyverse)
+library(here)
+library(naniar)
+```
+
+### How does fish length predict fish weight for trout perch (across all sample years)? 
+
+### Problem 1 
+
+1.  The null hypothesis.... The alternative hypothesis ....
+
+```{r, message = FALSE, warnings = FALSE}
+#Load in and filter data set
+fish_data <- read.csv("~/Documents/Rprojects_ENVS193/github/ENVS-193DS_homework-04_Nguyen_Stephanie/data/ntl6_v12.csv") |> #Read in data
+  filter(grepl("TROUTPERCH", spname)) |> #Filter rows containing trout perch
+  select(c("year4", "spname", "length", "weight")) #Select relevant columns
+
+#Problem 1b - create visualization of missing data 
+missing_fish_data <- vis_miss(fish_data)
+missing_fish_data
+
+
+#filter(!is.na(ice_duration)) --- to filter out missing data 
+
+```
+
+```{r, message = FALSE, warnings = FALSE}
+#Problem 1c - run tests
+```
+
