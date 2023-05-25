@@ -14,6 +14,11 @@ format:
 library(tidyverse)
 library(here)
 library(naniar)
+#install.packages("ggeffects")
+library(ggeffects)
+#install.packages("flextable")
+library(flextable)
+library(broom)
 ```
 
 ### How does fish length predict fish weight for trout perch (across all sample years)? 
@@ -26,18 +31,78 @@ library(naniar)
 #Load in and filter data set
 fish_data <- read.csv("~/Documents/Rprojects_ENVS193/github/ENVS-193DS_homework-04_Nguyen_Stephanie/data/ntl6_v12.csv") |> #Read in data
   filter(grepl("TROUTPERCH", spname)) |> #Filter rows containing trout perch
-  select(c("year4", "spname", "length", "weight")) #Select relevant columns
+  select(c("year4", "spname", "length", "weight")) |> #Select relevant columns
+  drop_na(weight)
 
 #Problem 1b - create visualization of missing data 
 missing_fish_data <- vis_miss(fish_data)
 missing_fish_data
+#41% of the weight data is missing. 
 
 
-#filter(!is.na(ice_duration)) --- to filter out missing data 
+#Exploratory data visualization, looks like there is relationship between length and weight
+ggplot(data = fish_data, aes(x = length, y = weight)) + geom_point()
+
+#Create model to further explore relationship
+modelobject <- lm(weight ~ length, data = fish_data)
+modelobject
+
+#Visualize models
+par(mfrow = c(2, 2))
+plot(modelobject)
 
 ```
 
 ```{r, message = FALSE, warnings = FALSE}
 #Problem 1c - run tests
+
+#Extract model predictions with ggpredict
+predictions <- ggpredict(modelobject, terms = "length")
+predictions
+
+#Plot predictions
+plot_predictions <- ggplot(data = fish_data, aes(x = length, y = weight)) + 
+  geom_point() + 
+  geom_line(data = predictions, 
+            aes(x = x, y = predicted), 
+            color = "red", linewidth = 1) + 
+  geom_ribbon(data = predictions,
+              aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), alpha = 0.2) + 
+  theme_bw() + 
+  labs(x = "Length", 
+       y = "Weight")
+
+plot_predictions
+
+
+model_summary <- summary(modelobject)
+
+model_summary
+```
+
+```{r}
+model_squares <- anova(modelobject)
+model_squares
+```
+
+```{r}
+model_squares_table <- tidy(model_squares) |> 
+  mutate(across(sumsq:meansq, ~ round(.x, digits = 5))) |> 
+  mutate(statistic = round(statistic, digits = 1)) |> 
+  mutate(p.value = case_when(
+    p.value < 0.001 ~ "0.001"
+  )) |> 
+  mutate(term == case_when(
+    term == "stem_length" ~ "Stem length (mm)",
+    TRUE ~ term
+  )) |> 
+  flextable() |> 
+  set_header_labels(df = "Degrees of Freedom", 
+                    sumsq = "Sum of squares",
+                    meansq = "Mean squares", 
+                    statistic = "F-statistic",
+                    p.value = "p-value")
+
+model_squares_table
 ```
 
