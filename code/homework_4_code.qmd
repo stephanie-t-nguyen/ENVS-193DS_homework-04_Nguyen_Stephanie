@@ -8,6 +8,8 @@ format:
     colorlinks: true
 ---
 
+Github Link: https://github.com/stephanie-t-nguyen/ENVS-193DS_homework-04_Nguyen_Stephanie.git
+
 ### Setup
 
 ```{r, message = FALSE, warnings = FALSE}
@@ -23,11 +25,11 @@ library(broom)
 
 ### How does fish length predict fish weight for trout perch (across all sample years)?
 
-### Problem 1a
+### Part 1 - Hypotheses
 
-1.  The null hypothesis is that there is no linear relationship between the length and weight of the trout perch. The alternative hypothesis is that the fish length could be used to predict the fish weight in a linear model (the two variables have a linear relationship). In biological terms, this means that the null hypothesis states that fish weight is unrelated to fish length (there can be heavy, short fish and light, long fish). The alternative hypothesis would state that fish weight is correlated with fish length -- longer fish should have a heavier weight because they are longer.
+1.  The null hypothesis is that there is no linear relationship between the length and weight of the trout perch (the p-value is greater than 0.05). The alternative hypothesis is that the fish length could be used to predict the fish weight in a linear model (the two variables have a linear relationship, the p-value is less than 0.05). In biological terms, this means that the null hypothesis states that fish weight is unrelated to fish length (there can be heavy, short fish and light, long fish). The alternative hypothesis would state that fish weight is correlated with fish length -- longer fish should have a heavier weight because they are longer.
 
-### Problem 1b
+### Part 2 - Missing Data
 
 ```{r, message = FALSE, warnings = FALSE}
 #Load in and filter data set
@@ -42,6 +44,8 @@ missing_fish_data
 #41% of the weight data is missing. This is relevant because one of the variables being tested in the linear regression model is weight. 
 ```
 
+### Part 3 - Run tests
+
 ```{r, message = FALSE, warnings = FALSE}
 #Address missing data
 fish_data <- fish_data |> #Fix fish_data 
@@ -49,19 +53,76 @@ fish_data <- fish_data |> #Fix fish_data
 ```
 
 ```{r}
-#Exploratory data visualization, looks like there is relationship between length and weight
+#Exploratory data visualization, looks like there is relationship between length and weight, but we need to further investigate 
 ggplot(data = fish_data, aes(x = length, y = weight)) + geom_point()
+```
 
+### Part 4 - Diagnostic Plots
+
+```{r}
 #Create model to further explore relationship
 modelobject <- lm(weight ~ length, data = fish_data)
 modelobject
+```
 
-#Visualize models
+```{r}
+#Visualize models - diagnostic plots in a grid 
 par(mfrow = c(2, 2))
 plot(modelobject)
 ```
 
-### Problem 1c
+### Part 5 - Meaning of diagnostic plots 
+
+The residuals vs fitted line nicely fits the data, with the exception of some very few outliers, suggesting that a linear relationship with a slight bow fits the data well. This means we could proceed with our analysis and that the p-values and confidence intervals are reliable for this test.
+
+The Normal Q-Q plot demonstrates the normality of the data. The vast majority of the data fits on a linear plot suggesting normality, however, the tails at the end suggest some outliers.
+
+The scale location plot shows us if the data is homoscedastic or heteroscedastic, based on the spread of points around a roughly red horizontal line. Since has no difference in spread throughout the red line, we can assume heteroscedasticity, one of the requirements for a linear regression model.
+
+The residuals vs leverage plot shows us that there is one point (#138) that is outside Cook's distance. This indicates an outlier that will significantly change the regression model if removed, so we must either verify the data point is not a mistake, or remove the data point altogether to better fit the linear regression model.
+
+### Part 6 - Results of Model Object
+
+```{r}
+#Display results of modelobject
+model_summary <- summary(modelobject)
+model_summary
+```
+
+### Part 7 - ANOVA Table 
+
+```{r}
+model_squares <- anova(modelobject)
+model_squares
+
+#Create ANOVA table 
+model_squares_table <- tidy(model_squares) |> #Make dataframe with model_squares
+  mutate(across(sumsq:meansq, ~ round(.x, digits = 5))) |> #round sum of squares and mean squares columns to have 5 digits
+  mutate(statistic = round(statistic, digits = 1)) |> #round F-statistic to have 1 digit
+  mutate(p.value = case_when(
+    p.value < 0.001 ~ "0.001"
+  )) |> #Replace p-value with <0.001 if it is very small 
+  mutate(term == case_when( #Rename length column
+    term == "length" ~ "length (mm)",
+    TRUE ~ term
+  )) |> 
+  flextable() |> #Make the data frame a flex table object
+  set_header_labels(df = "Degrees of Freedom", #Change header labels to be meaningful
+                    sumsq = "Sum of squares",
+                    meansq = "Mean squares", 
+                    statistic = "F-statistic",
+                    p.value = "p-value")
+
+model_squares_table
+```
+
+### Part 8 
+
+The ANOVA table lays out the model and significance of the linear regression model. From the ANOVA table, we can see that the p-value is very, very small
+
+### Part 9 
+
+### Part 10 
 
 ```{r, message = FALSE, warnings = FALSE}
 #Problem 1c - run tests
@@ -69,51 +130,21 @@ plot(modelobject)
 #Get predicted model values using ggpredict
 predictions <- ggpredict(modelobject, terms = "length")
 predictions
-```
 
-```{r}
 #Plot predictions
 plot_predictions <- ggplot(data = fish_data, aes(x = length, y = weight)) + 
   geom_point() + #Make scatterplot of weight and length
-  geom_line(data = predictions, 
+  geom_line(data = predictions, #Graph model (predicted values)
             aes(x = x, y = predicted), 
             color = "red", linewidth = 1) + 
-  geom_ribbon(data = predictions,
+  geom_ribbon(data = predictions,#Illustrate confidence interval
               aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), alpha = 0.2) + 
   theme_bw() + #Set theme 
   labs(x = "Length (mm)", #Set labels 
-       y = "Weight (g)")
+       y = "Weight (g)", 
+       caption = "This is a linear regression model in which the red lines are the predicted values and the gray ribbon around it represents the confidence interval.", 
+       title = "Linear Regression Model of Trout-Perch Length vs Weight") + 
+  theme_bw()
 
 plot_predictions
-```
-
-```{r}
-model_summary <- summary(modelobject)
-model_summary
-```
-
-```{r}
-model_squares <- anova(modelobject)
-model_squares
-```
-
-```{r}
-model_squares_table <- tidy(model_squares) |> 
-  mutate(across(sumsq:meansq, ~ round(.x, digits = 5))) |> 
-  mutate(statistic = round(statistic, digits = 1)) |> 
-  mutate(p.value = case_when(
-    p.value < 0.001 ~ "0.001"
-  )) |> 
-  mutate(term == case_when(
-    term == "stem_length" ~ "Stem length (mm)",
-    TRUE ~ term
-  )) |> 
-  flextable() |> 
-  set_header_labels(df = "Degrees of Freedom", 
-                    sumsq = "Sum of squares",
-                    meansq = "Mean squares", 
-                    statistic = "F-statistic",
-                    p.value = "p-value")
-
-model_squares_table
 ```
