@@ -118,15 +118,17 @@ model_squares_table
 
 ### Part 8 
 
-The ANOVA table lays out the model and significance of the linear regression model. From the ANOVA table, we can see that the p-value is very, very small
+The ANOVA table lays out the overall model and significance of the linear regression model (F-statistic, p-value, sum and mean squares), while the summary() lays out individual predictors (adjusted R square values, standard error, etc). The ANOVA table still pulls much of its values from the summary() but calculates new values such as sum of squares and mean squares.
 
 ### Part 9 
+
+We ran an ANOVA test and a linear regression model in order to see how well length predicts weight. When running summary() and the ANOVA table, the degrees of freedom was 1 and 288, the p-value is 2e-16, the t-value for length was 35.79, the F-statistic is 1208.8, the significance level was 0.05, the R squared value was 0.81, and the sample size was 290. The p-value was much, much less than 0.001 meaning that our calculated F-statistic is very unlikely to have obtained through chance alone and we can reject our null hypothesis, meaning length is likely a good predictor of fish weight.
+
+2-3 sentences, results
 
 ### Part 10 
 
 ```{r, message = FALSE, warnings = FALSE}
-#Problem 1c - run tests
-
 #Get predicted model values using ggpredict
 predictions <- ggpredict(modelobject, terms = "length")
 predictions
@@ -142,9 +144,12 @@ plot_predictions <- ggplot(data = fish_data, aes(x = length, y = weight)) +
   theme_bw() + #Set theme 
   labs(x = "Length (mm)", #Set labels 
        y = "Weight (g)", 
-       caption = "This is a linear regression model in which the red lines are the predicted values and the gray ribbon around it represents the confidence interval.", 
+       caption = "This is a linear regression model in which the red lines are the predicted values and the gray ribbon 
+around it represents the confidence interval. According to our stats above and the plot, length predicts 
+weight well. For every 20 mm longer the fish, its weight is expected to increase by about 5 grams.", 
        title = "Linear Regression Model of Trout-Perch Length vs Weight") + 
-  theme_bw()
+  theme_bw() + 
+  theme(plot.caption = element_text(hjust = 0))
 
 plot_predictions
 ```
