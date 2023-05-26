@@ -21,25 +21,34 @@ library(flextable)
 library(broom)
 ```
 
-### How does fish length predict fish weight for trout perch (across all sample years)? 
+### How does fish length predict fish weight for trout perch (across all sample years)?
 
-### Problem 1 
+### Problem 1a
 
-1.  The null hypothesis.... The alternative hypothesis ....
+1.  The null hypothesis is that there is no linear relationship between the length and weight of the trout perch. The alternative hypothesis is that the fish length could be used to predict the fish weight in a linear model (the two variables have a linear relationship). In biological terms, this means that the null hypothesis states that fish weight is unrelated to fish length (there can be heavy, short fish and light, long fish). The alternative hypothesis would state that fish weight is correlated with fish length -- longer fish should have a heavier weight because they are longer.
+
+### Problem 1b
 
 ```{r, message = FALSE, warnings = FALSE}
 #Load in and filter data set
 fish_data <- read.csv("~/Documents/Rprojects_ENVS193/github/ENVS-193DS_homework-04_Nguyen_Stephanie/data/ntl6_v12.csv") |> #Read in data
   filter(grepl("TROUTPERCH", spname)) |> #Filter rows containing trout perch
-  select(c("year4", "spname", "length", "weight")) |> #Select relevant columns
-  drop_na(weight)
+  select(c("year4", "spname", "length", "weight")) #Select relevant columns
 
 #Problem 1b - create visualization of missing data 
-missing_fish_data <- vis_miss(fish_data)
+missing_fish_data <- vis_miss(fish_data) + labs(caption = "41% of the weight column is missing, which is a significant amount of data. Thus, to 
+                                                proceed forward with data analysis, the rows with missing weights are omitted below.")
 missing_fish_data
-#41% of the weight data is missing. 
+#41% of the weight data is missing. This is relevant because one of the variables being tested in the linear regression model is weight. 
+```
 
+```{r, message = FALSE, warnings = FALSE}
+#Address missing data
+fish_data <- fish_data |> #Fix fish_data 
+  drop_na(weight) #Drop rows with NAs in weight
+```
 
+```{r}
 #Exploratory data visualization, looks like there is relationship between length and weight
 ggplot(data = fish_data, aes(x = length, y = weight)) + geom_point()
 
@@ -50,33 +59,36 @@ modelobject
 #Visualize models
 par(mfrow = c(2, 2))
 plot(modelobject)
-
 ```
+
+### Problem 1c
 
 ```{r, message = FALSE, warnings = FALSE}
 #Problem 1c - run tests
 
-#Extract model predictions with ggpredict
+#Get predicted model values using ggpredict
 predictions <- ggpredict(modelobject, terms = "length")
 predictions
+```
 
+```{r}
 #Plot predictions
 plot_predictions <- ggplot(data = fish_data, aes(x = length, y = weight)) + 
-  geom_point() + 
+  geom_point() + #Make scatterplot of weight and length
   geom_line(data = predictions, 
             aes(x = x, y = predicted), 
             color = "red", linewidth = 1) + 
   geom_ribbon(data = predictions,
               aes(x = x, y = predicted, ymin = conf.low, ymax = conf.high), alpha = 0.2) + 
-  theme_bw() + 
-  labs(x = "Length", 
-       y = "Weight")
+  theme_bw() + #Set theme 
+  labs(x = "Length (mm)", #Set labels 
+       y = "Weight (g)")
 
 plot_predictions
+```
 
-
+```{r}
 model_summary <- summary(modelobject)
-
 model_summary
 ```
 
@@ -105,4 +117,3 @@ model_squares_table <- tidy(model_squares) |>
 
 model_squares_table
 ```
-
